@@ -44,14 +44,7 @@ class CustomHandler(Handler):
             post_id = event["object"].get("post_id")
             owner_id = event["object"].get("owner_id")
 
-        while True:
-            if self.is_ready:
-                self.is_ready = False
-                await self.func(event, token, text, user_id, peer_id=peer_id, owner_id=owner_id, post_id=post_id)
-                self.is_ready = True
-                break
-            else:
-                await asyncio.sleep(0.5)
+        await self.func(event, token, text, user_id, peer_id=peer_id, owner_id=owner_id, post_id=post_id)
 
 
 class MessageNewHandler(Handler):
@@ -64,14 +57,7 @@ class MessageNewHandler(Handler):
             user_id = event["object"]["message"]["from_id"]
 
             if self.condition.new_event(text=text, user_id=user_id, peer_id=peer_id):
-                while True:
-                    if self.is_ready:
-                        self.is_ready = False
-                        await self.func(event, token, text, user_id, peer_id=peer_id)
-                        self.is_ready = True
-                        break
-                    else:
-                        await asyncio.sleep(0.5)
+                await self.func(event, token, text, user_id, peer_id=peer_id)
 
         except (IndexError, KeyError):
             pass
@@ -87,14 +73,7 @@ class MessageEditHandler(Handler):
             user_id = event["object"]["from_id"]
 
             if self.condition.new_event(text=text, user_id=user_id, peer_id=peer_id):
-                while True:
-                    if self.is_ready:
-                        self.is_ready = False
-                        await self.func(event, token, text, user_id, peer_id=peer_id)
-                        self.is_ready = True
-                        break
-                    else:
-                        await asyncio.sleep(0.5)
+                await self.func(event, token, text, user_id, peer_id=peer_id)
 
         except (IndexError, KeyError):
             pass
@@ -111,14 +90,7 @@ class WallReplyNewHandler(Handler):
             post_id = event["object"]["post_id"]
 
             if self.condition.new_event(text=text, user_id=user_id, post_id=post_id, owner_id=owner_id):
-                while True:
-                    if self.is_ready:
-                        self.is_ready = False
-                        await self.func(event, token, text, user_id, owner_id=owner_id, post_id=post_id)
-                        self.is_ready = True
-                        break
-                    else:
-                        await asyncio.sleep(0.5)
+                await self.func(event, token, text, user_id, owner_id=owner_id, post_id=post_id)
 
         except (IndexError, KeyError):
             pass
@@ -139,14 +111,7 @@ class WallPostNewHandler(Handler):
             post_id = event["object"]["id"]
 
             if self.condition.new_event(text=text, user_id=user_id, post_id=post_id, owner_id=owner_id):
-                while True:
-                    if self.is_ready:
-                        self.is_ready = False
-                        await self.func(event, token, text, user_id, owner_id=owner_id, post_id=post_id)
-                        self.is_ready = True
-                        break
-                    else:
-                        await asyncio.sleep(0.5)
+                await self.func(event, token, text, user_id, owner_id=owner_id, post_id=post_id)
 
         except (IndexError, KeyError):
             pass
@@ -163,14 +128,7 @@ class BoardPostNewHandler(Handler):
             post_id = event["object"]["topic_id"]
 
             if self.condition.new_event(text=text, user_id=user_id, post_id=post_id, owner_id=owner_id):
-                while True:
-                    if self.is_ready:
-                        self.is_ready = False
-                        await self.func(event, token, text, user_id, owner_id=owner_id, post_id=post_id)
-                        self.is_ready = True
-                        break
-                    else:
-                        await asyncio.sleep(0.5)
+                await self.func(event, token, text, user_id, owner_id=owner_id, post_id=post_id)
 
         except (IndexError, KeyError):
             pass
