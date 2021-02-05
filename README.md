@@ -130,3 +130,30 @@ async def handler(dispatcher: Dispatcher):
     await dispatcher.send_message("Содержит сообщение прив", keyboard=buttons)
 ```
 [Результат создания кнопок](https://sun9-26.userapi.com/impf/Y1M5ziV_GLiQxaALrdTlDkOB-Vdp0nSOKH2-gA/YT8LKOXmFkM.jpg?size=624x351&quality=96&proxy=1&sign=01e1486d2e40ac2ab494541773f16109&type=album)
+
+По умолчанию кнопки создаются обычными и одноразовыми. Чтобы сделать их многоразовыми пропишите `one_time=False`, а если хотите сделать их инлайновыми, то пропишите `inline=True`. К примеру:
+```python
+buttons = keyboard.get_keyboard([
+    [
+        ("yes", "positive"),
+        ("no", "negative")
+    ],
+    [
+        ("hm...", "default"),
+        ("by default", "primary"),
+        ("never", "negative")
+    ]
+], inline=True)
+```
+Тогда эти кнопки будут в сообщении (инлайновыми).
+
+Можно строить любые запросы, даже если этого не предполагает отсутствие метода в диспетчере:
+```python
+@bot.handle
+@Handler.on.message_new(Condition(contains_command="прив"), is_lower=True)
+async def handler(dispatcher: Dispatcher):
+    result = await bot.execute("messages.send", peer_id=dispatcher.peer_id, 
+                               message="okay", random_id=0)
+    print(result)
+```
+В этом примере мы на новое сообщение, содержащее "прив" отвечаем "okay" нашим построенным запросом. `peer_id` же берём из диспетчера. Какие параметры можно высунуть из диспетчера? Можно высунуть: `token`, `user_id`, `peer_id`, `post_id` (если событие это новая запись на стене, новый комментарий на стене или в обсуждении), `owner_id` (если событие было внутри группы, то `owner_id` это id группы), `event` (объект, в котором содержится вся информация о событии) и `text` (если к примеру событие это новое сообщение, то `text` это текст сообщения, если это к примеру новый комментарий, то `text` это текст комментария и т.д.)
