@@ -296,10 +296,8 @@ async def handler(dispatcher: Dispatcher):
     result = await bot.execute("messages.send", peer_id=dispatcher.peer_id, 
                                message="okay", random_id=0)
     print(result)
-
-
-
-
+    
+    
 if __name__ == "__main__":
     run_polling(bot)
 ```
