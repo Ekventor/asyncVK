@@ -178,3 +178,128 @@ async def handler(dispatcher: Dispatcher):
 ```
 Хандлер, обрабатывающий сообщение, где есть строка "прив" сперва пометит сообщение как прочитанное, потом установит статус "печатает…" и через 9 секунд отправит сообщение "okay" и всё это асинхронно. 
 > P.S. хандлеры друг друга не блокируют, так что во время работы первого хандлера вы можете написать "а" и бот ответит "Б!", несмотря на работу первого хандлера.
+
+По-мимо этого можно делать хандлеры не для условий, а для всего события целиком. Например: 
+```python
+@bot.handle
+@Handler.on("message_new")
+async def handler(dispatcher: Dispatcher):
+    if dispatcher.text.lower() == "abs":
+        await dispatcher.send_message("peer")
+    elif dispatcher.text.lower() == "help me":
+        await dispatcher.send_message("no")
+```
+Этот хандлер будет обрабатывать все события типа `message_new`. В данном случае он на "abs" будет отвечать "peer", а на "help me" будет отвечать "no". И также регистр сообщения не важен, ибо мы применили метод `lower`. 
+
+Так можно делать обработчики для любых событий. К примеру обработчик для новых комментариев:
+```python
+@bot.handle
+@Handler.on("wall_reply_new")
+async def handler(dispatcher: Dispatcher):
+    if dispatcher.text.lower() == "nice":
+        await dispatcher.send_comment("ok")
+    elif dispatcher.text.lower() == "not bad":
+        await dispatcher.send_comment("no, very bad!")
+```
+
+Какой обработчик использовать? Для условий или для всего события целиком? Если вам нужно сделать обработчик для простых команд (ответить на то этим и что-то в этом роде), то лучше все эти команды прописать в обработчике события, в данном случае это будет `@Handler.on("message_new")` ведь нам нужно отвечать на сообщения. А если же команды сложные, а не простые ответы с какими-то дополнительными действиями, то лучше их прописать в обработчике условия. К примеру нам нужно, чтобы при сообщении «статистика» бот получил статистику откуда-то, рассортировал и отфильтровал её и потом отправил. Такое лучше прописывать в обработчике условия, в данном случае `@Handler.on.message_new(Condition(command="статистика"))`
+Но нужно смотреть на код в целом, ибо иногда может пригодится сделать исключение и написать сложную команду в обработчик события, а простую в обработчик условия. То есть выбор должен зависеть от ситуации и структуры вашего кода.
+
+В хандлерах и в самом боте не предусмотрена синхронизация. Поэтому если вы будете пользоваться асинхронной реализацией, к примеру какой-то базы-данных, будет состояние гонки. А пользоваться синхронными реализациями базы-данных плохая идея, это снизит скорость бота. Такая структура позволяет боту быть очень быстрым. Но в фреймворке есть реализация асинхронной базы-данных с синхронизацией, которой если вы будете правильно пользоваться, то состояния гонки не будет и бот будет оставаться таким же быстрым. Пример бота с этой реализацией бд:
+```python
+from asyncVK.asyncDB import SQLite
+```
+```python
+db = SQLite("data.db")
+bot = Bot(TOKEN, GROUP_ID)
+
+
+
+async def create_db():
+    async with db:
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS profile (
+                user_id INTEGER,
+                money INTEGER
+            )
+        """)
+
+
+@bot.handle
+@Handler.on("message_new")
+async def handler(dispatcher: Dispatcher):
+    if dispatcher.text.lower() == "create db" and dispatcher.user_id == OWNER_ID:
+        await create_db()
+        await dispatcher.send_message("db was created!")
+
+    elif dispatcher.text.lower() == "register":
+        async with db:
+            await db.execute(f"""
+                INSERT INTO profile 
+                VALUES ({dispatcher.user_id}, 0)
+            """)
+
+        await dispatcher.send_message("you are was registered!")
+
+
+@bot.handle
+@Handler.on.message_new(Condition(command="click"), is_lower=True)
+async def handler(dispatcher: Dispatcher):
+    async with db:
+        await db.execute(f"""
+            UPDATE profile
+            SET money=money+1
+            WHERE user_id={dispatcher.user_id}
+        """)
+
+        state = await db.execute(f"""
+            SELECT money
+            FROM profile
+            WHERE user_id={dispatcher.user_id}
+        """)
+
+    money = state[0][0]
+    await dispatcher.send_message(f"Money: {money}")
+```
+`OWNER_ID` это константа, которая должна ваш ID в ВК, это условие запрещает создавать база-данных кому-либо кроме вас командой. 
+Что делает `async with db`?. `async with db` ждёт пока база-данных откроется для запросов, потом закрывает базу-данных для запросов и как все ваши запросы прошли к базе, она опять открывает базу-данных для запросов. 
+Метод `db.execute` отправляет ваш запрос к базе-данных.
+
+Весь код целиком для старта:
+```python
+from asyncVK import Handler, Dispatcher, Bot, run_polling
+import asyncVK.keyboard as keyboard
+
+
+TOKEN = "access_token"
+GROUP_ID = 182801600
+
+bot = Bot(TOKEN, GROUP_ID)
+
+
+@bot.handle
+@Handler.on.message_new(Condition(contains_command="прив"), is_lower=True)
+async def handler(dispatcher: Dispatcher):
+    buttons = keyboard.get_keyboard([
+        [
+            ("yes", "positive"),
+            ("no", "negative")
+        ],
+        [
+            ("hm...", "default"),
+            ("by default", "primary"),
+            ("never", "negative")
+        ]
+    ], inline=True)
+
+    await dispatcher.send_message("Содержит сообщение прив", keyboard=buttons)
+    result = await bot.execute("messages.send", peer_id=dispatcher.peer_id, 
+                               message="okay", random_id=0)
+    print(result)
+
+
+
+
+if __name__ == "__main__":
+    run_polling(bot)
+```
