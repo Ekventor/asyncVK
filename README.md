@@ -129,4 +129,4 @@ async def handler(dispatcher: Dispatcher):
 
     await dispatcher.send_message("Содержит сообщение прив", keyboard=buttons)
 ```
-[screenshot of sample](https://sun9-26.userapi.com/impf/Y1M5ziV_GLiQxaALrdTlDkOB-Vdp0nSOKH2-gA/YT8LKOXmFkM.jpg?size=624x351&quality=96&proxy=1&sign=01e1486d2e40ac2ab494541773f16109&type=album)
+[Результат создания кнопок](https://sun9-26.userapi.com/impf/Y1M5ziV_GLiQxaALrdTlDkOB-Vdp0nSOKH2-gA/YT8LKOXmFkM.jpg?size=624x351&quality=96&proxy=1&sign=01e1486d2e40ac2ab494541773f16109&type=album)
