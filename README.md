@@ -9,10 +9,10 @@
 
 Как работать с библиотекой? Легко и интуитивно понятно! Для начала нужно импортировать саму библиотеку и создать бота:
 ```python
-from asyncVK import Handler, Dispatcher, Bot, run_polling
+from asyncVK import Handler, Bot, run_polling
+from asyncVK.dispatcher import Dispatcher
 from asyncVK.condition import Condition, And, Or
 import asyncVK.keyboard as keyboard
-
 
 
 TOKEN = "access_token"
@@ -36,3 +36,6 @@ if __name__ == "__main__":
 async def handler(dispatcher: Dispatcher): 
     await dispatcher.send_message("Hi!")
 ```
+
+
+В примере выше мы создали обработчик новых сообщений с помощью декоратора `@Handler.on.message_new` и добавили его в бота с помощью декоратора `@bot.handle`
