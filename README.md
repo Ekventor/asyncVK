@@ -109,3 +109,24 @@ Or(
     dispatcher.mark_as_read – пометить сообщение как «прочитанное». Никаких аргументов не принимает.
     dispatcher.set_typing_status – установить статус на набор текста / запись голосового сообщения. Принимает один аргумент: 
         typing_status. Его значение по умолчанию "typing" (набор текста). Можно изменить на "audiomessage" – запись голосового сообщения.
+
+Как создать кнопки? Тоже несложно! Вот пример:
+```python
+@bot.handle
+@Handler.on.message_new(Condition(contains_command="прив"), is_lower=True)
+async def handler(dispatcher: Dispatcher):
+    buttons = keyboard.get_keyboard([
+        [
+            ("yes", "positive"),
+            ("no", "negative")
+        ],
+        [
+            ("hm...", "default"),
+            ("by default", "primary"),
+            ("never", "negative")
+        ]
+    ])
+
+    await dispatcher.send_message("Содержит сообщение прив", keyboard=buttons)
+```
+[screenshot of sample](https://sun9-26.userapi.com/impf/Y1M5ziV_GLiQxaALrdTlDkOB-Vdp0nSOKH2-gA/YT8LKOXmFkM.jpg?size=624x351&quality=96&proxy=1&sign=01e1486d2e40ac2ab494541773f16109&type=album)
