@@ -157,3 +157,24 @@ async def handler(dispatcher: Dispatcher):
     print(result)
 ```
 В этом примере мы на новое сообщение, содержащее "прив" отвечаем "okay" нашим построенным запросом. `peer_id` же берём из диспетчера. Какие параметры можно высунуть из диспетчера? Можно высунуть: `token`, `user_id`, `peer_id`, `post_id` (если событие это новая запись на стене, новый комментарий на стене или в обсуждении), `owner_id` (если событие было внутри группы, то `owner_id` это id группы), `event` (объект, в котором содержится вся информация о событии) и `text` (если к примеру событие это новое сообщение, то `text` это текст сообщения, если это к примеру новый комментарий, то `text` это текст комментария и т.д.)
+
+Если вы хотите выполнить сразу несколько запросов асинхронно, то можно просто воспользовать библиотекой `asyncio`. К примеру:
+```python
+@bot.handle
+@Handler.on.message_new(Condition(contains_command="прив"), is_lower=True)
+async def handler(dispatcher: Dispatcher):
+    tasks = [asyncio.create_task(dispatcher.mark_as_read()),
+             asyncio.create_task(dispatcher.set_typing_status()),
+             asyncio.create_task(asyncio.sleep(9))]
+
+    await asyncio.gather(*tasks)
+    await dispatcher.send_message("okay")
+
+
+@bot.handle
+@Handler.on.message_new(Condition(contains_command="а"), is_lower=True)
+async def handler(dispatcher: Dispatcher):
+    await dispatcher.send_message("Б!")
+```
+Хандлер, обрабатывающий сообщение, где есть строка "прив" сперва пометит сообщение как прочитанное, потом установит статус "печатает…" и через 9 секунд отправит сообщение "okay" и всё это асинхронно. 
+> P.S. хандлеры друг друга не блокируют, так что во время работы первого хандлера вы можете написать "а" и бот ответит "Б!", несмотря на работу первого хандлера.
