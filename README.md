@@ -5,7 +5,8 @@
 4) Keyboard – это второстепенная структурная единица. Она отвечает за создание кнопок в ВК.
 5) Condition (Condition, And, Or) – эта структурная единица отвечает за условия. С помощью неё можно строить сложные условия для хандлеров.
 
-    Как работать с библиотекой? Легко и интуитивно понятно! Для начала нужно импортировать саму библиотеку и создать бота:
+
+Как работать с библиотекой? Легко и интуитивно понятно! Для начала нужно импортировать саму библиотеку и создать бота:
 ```python
 from asyncVK import Handler, Dispatcher, Bot, run_polling
 from asyncVK.condition import Condition, And, Or
@@ -19,8 +20,18 @@ GROUP_ID = 182801600
 bot = Bot(TOKEN, GROUP_ID)
 ```
 
-    Теперь мы можем запустить бота на `LongPoll API`:
+
+Теперь мы можем запустить бота на `LongPoll API`:
 ```python
 if __name__ == "__main__":
     run_polling(bot)
+```
+
+
+Сейчас бот запущен, но ни на что не реагирует. Чтобы это исправить нам нужно создать обработчик и добавить его в бота. Как это сделать? Вот так:
+```python
+@bot.handle
+@Handler.on.message_new(Condition(command="привет!"), is_lower=True)
+async def handler(dispatcher: Dispatcher): 
+    await dispatcher.send_message("Hi!")
 ```
