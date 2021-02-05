@@ -17,5 +17,10 @@ TOKEN = "access_token"
 GROUP_ID = 182801600
 
 bot = Bot(TOKEN, GROUP_ID)
+```
 
+    Теперь мы можем запустить бота на `LongPoll API`:
+```python
+if __name__ == "__main__":
+    run_polling(bot)
 ```
