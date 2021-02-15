@@ -278,8 +278,7 @@ total_money = Variable(0)
 async def handler(dispatcher: Dispatcher):
     async with total_money:
         total_money.object += 1
-	
-    await dispatcher.send_message("Все деньги мира: " + str(total_money.object))
+        await dispatcher.send_message("Все деньги мира: " + str(total_money.object))
 ```
 
 
