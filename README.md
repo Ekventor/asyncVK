@@ -265,6 +265,24 @@ async def handler(dispatcher: Dispatcher):
 Что делает `async with db`?. `async with db` ждёт пока база-данных откроется для запросов, потом закрывает базу-данных для запросов и как все ваши запросы прошли к базе, она опять открывает базу-данных для запросов. 
 Метод `db.execute` отправляет ваш запрос к базе-данных.
 
+Также можно использовать глобальные переменные с синхронизацией. Вот пример:
+```python
+from asyncVK.asyncDB import Variable
+
+
+total_money = Variable(0)
+
+
+@bot.handle
+@Handler.on.message_new(Condition(command="/click"), is_lower=True)
+async def handler(dispatcher: Dispatcher):
+    async with total_money:
+        total_money.object += 1
+	
+    await dispatcher.send_message("Все деньги мира: " + str(total_money.object))
+```
+
+
 Весь код целиком для старта:
 ```python
 from asyncVK import Handler, Dispatcher, Bot, run_polling
