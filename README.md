@@ -283,7 +283,7 @@ async def handler(dispatcher: Dispatcher):
 
 
 Также в боте присутствуют middleware:
-```
+```python
 class Middleware:
     event_type = "message_new"
 
@@ -298,7 +298,7 @@ bot.add_middleware(Middleware())
 ```
 Что этот код делает? метод  `pre ` исполнится до обработки хандлерами, а  `post ` после. 
 Проверить это можно вот так: 
-```
+```python
 class Middleware:
     event_type = "message_new"
 
