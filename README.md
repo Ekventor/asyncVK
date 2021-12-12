@@ -296,16 +296,20 @@ class Middleware:
 
 bot.add_middleware(Middleware())
 ```
-Что этот код делает? метод  `pre ` исполнится до обработки хандлерами, а  `post ` после. 
+Что этот код делает? метод  `pre` исполнится до обработки хандлерами, а  `post` после. 
 Проверить это можно вот так: 
 ```python
 class Middleware:
     event_type = "message_new"
 
-    async def pre(self, updates):
+    @staticmethod
+    async def pre(dispatcher: Dispatcher, reject: Callable[[], None]):
         print("pre")
+        if dispatcher.text == "/test":
+            reject()
 
-    async def post(self, updates):
+    @staticmethod
+    async def post(dispatcher: Dispatcher):
         print("post")
 
 
@@ -317,7 +321,9 @@ bot.add_middleware(Middleware())
 async def test(dispatcher: Dispatcher):
     await dispatcher.send_message("test")
 ```
-Тут в консоль выведется сперва `pre`, потом `test`, а затем `post`
+Что делает функция reject? Она отклоняет событие, и при её активации событие не дойдёт до хандлеров. 
+Если сообщение содержит "/test", но не равняется ему, то тут в консоль выведется сперва `pre`, потом `test`, а затем `post`.
+При этом, если сообщение равняется "/test", то в консоли будет лишь `pre`
 
 
 @bot.handle
