@@ -312,11 +312,7 @@ async def test(dispatcher: Dispatcher):
 Если сообщение содержит `"/test"`, но не равняется ему, то тут в консоль выведется сперва `pre`, потом `test`, а затем `post`.
 При этом, если сообщение равняется `"/test"`, то в консоли будет лишь `pre`.
 
-
-@bot.handle
-@Handler.on.message_new(Condition(contains_command="/test"), is_lower=True)
-async def test(dispatcher: Dispatcher):
-    await dispatcher.send_message("test")
+`event_type` в `Middleware` отвечает за то, для каких типов событий будет работать этот миддлвейр. Если Вам нужно, чтобы он работал для всех событий, то установите `event_type = None`
 
 
 Весь код целиком для старта:
