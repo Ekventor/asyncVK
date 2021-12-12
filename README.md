@@ -282,6 +282,50 @@ async def handler(dispatcher: Dispatcher):
 ```
 
 
+Также в боте присутствуют middleware:
+```
+class Middleware:
+    event_type = "message_new"
+
+    async def pre(self, updates):
+        print("pre")
+
+    async def post(self, updates):
+        print("post")
+
+
+bot.add_middleware(Middleware())
+```
+Что этот код делает? метод  `pre ` исполнится до обработки хандлерами, а  `post ` после. 
+Проверить это можно вот так: 
+```
+class Middleware:
+    event_type = "message_new"
+
+    async def pre(self, updates):
+        print("pre")
+
+    async def post(self, updates):
+        print("post")
+
+
+bot.add_middleware(Middleware())
+
+
+@bot.handle
+@Handler.on.message_new(Condition(contains_command="/test"), is_lower=True)
+async def test(dispatcher: Dispatcher):
+    await dispatcher.send_message("test")
+```
+Тут в консоль выведется сперва `pre`, потом `test`, а затем `post`
+
+
+@bot.handle
+@Handler.on.message_new(Condition(contains_command="/test"), is_lower=True)
+async def test(dispatcher: Dispatcher):
+    await dispatcher.send_message("test")
+
+
 Весь код целиком для старта:
 ```python
 from asyncVK import Handler, Dispatcher, Bot, run_polling
