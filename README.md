@@ -234,10 +234,10 @@ async def handler(dispatcher: Dispatcher):
 
     elif dispatcher.text.lower() == "register":
         async with db:
-            await db.execute(f"""
+            await db.execute("""
                 INSERT INTO profile 
-                VALUES ({dispatcher.user_id}, 0)
-            """)
+                VALUES (?, 0)
+            """, (dispatcher.user_id,))
 
         await dispatcher.send_message("you are was registered!")
 
@@ -246,17 +246,17 @@ async def handler(dispatcher: Dispatcher):
 @Handler.on.message_new(Condition(command="click"), is_lower=True)
 async def handler(dispatcher: Dispatcher):
     async with db:
-        await db.execute(f"""
+        await db.execute("""
             UPDATE profile
             SET money=money+1
-            WHERE user_id={dispatcher.user_id}
-        """)
+            WHERE user_id=(?)
+        """, (dispatcher.user_id,))
 
-        state = await db.execute(f"""
+        state = await db.execute("""
             SELECT money
             FROM profile
-            WHERE user_id={dispatcher.user_id}
-        """)
+            WHERE user_id=(?)
+        """, (dispatcher.user_id,))
 
     money = state[0][0]
     await dispatcher.send_message(f"Money: {money}")
