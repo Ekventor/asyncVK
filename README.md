@@ -282,41 +282,11 @@ async def handler(dispatcher: Dispatcher):
 ```
 
 
-Также в боте присутствуют middleware.
-Метод  `pre` исполнится до обработки хандлерами, а  `post` после. А функция `reject` отклоняет событие.
-Проверить это можно вот так: 
-```python
-class Middleware:
-    event_type = "message_new"
-
-    @staticmethod
-    async def pre(dispatcher: Dispatcher, reject: Callable[[], None]):
-        print("pre")
-        if dispatcher.text == "/test":
-            reject()
-
-    @staticmethod
-    async def post(dispatcher: Dispatcher):
-        print("post")
-
-
-bot.add_middleware(Middleware())
-
-
-@bot.handle
-@Handler.on.message_new(Condition(contains_command="/test"), is_lower=True)
-async def test(dispatcher: Dispatcher):
-    await dispatcher.send_message("test")
-```
-Что делает функция `reject`? Она отклоняет событие, и при её активации событие не дойдёт до хандлеров. 
-Если сообщение содержит `"/test"`, но не равняется ему, то тут в консоль выведется сперва `pre`, потом `test`, а затем `post`.
-При этом, если сообщение равняется `"/test"`, то в консоли будет лишь `pre`.
-`event_type` в `Middleware` отвечает за то, для каких типов событий будет работать этот миддлвейр. Если Вам нужно, чтобы он работал для всех событий, то установите `event_type = None`
-
-
 Весь код целиком для старта:
 ```python
-from asyncVK import Handler, Dispatcher, Bot, run_polling
+from asyncVK import Handler, Bot, run_polling
+from asyncVK.dispatcher import Dispatcher
+from asyncVK.condition import Condition, And, Or
 import asyncVK.keyboard as keyboard
 
 
