@@ -332,8 +332,34 @@ if __name__ == "__main__":
     bot.add_chain(chain)
 
     run_polling(bot)
-
 ```
+
+Также можно пробрасывать какие-то данные по цепочке:
+```python
+chain = Chain()
+
+
+@Handler.on.message_new(Condition(contains_command="прив"), is_lower=True)
+async def handler_1(dispatcher: Dispatcher):
+    await dispatcher.send_message("Напиши что-то")
+    return 12
+
+
+@Handler.on.message_new(Condition(contains_command="что-то"), is_lower=True)
+async def handler_2(dispatcher: Dispatcher):
+    await dispatcher.send_message(f"Пон {dispatcher.chain_data}")
+    
+    
+if __name__ == "__main__":
+    chain = Chain()
+    chain.add_handler(handler_1)
+    chain.add_handler(handler_2)
+    bot.add_chain(chain)
+
+    run_polling(bot)
+```
+
+В таком случае после `прив` бот ответит `Напиши что-то`, и если после этого вы сразу напишете `что-то`, то бот ответит `Пон 12`
 
 
 Весь код целиком для старта:
