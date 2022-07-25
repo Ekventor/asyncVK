@@ -360,7 +360,42 @@ if __name__ == "__main__":
     run_polling(bot)
 ```
 
-В таком случае после `прив` бот ответит `Напиши что-то`, и если после этого вы сразу напишете `что-то`, то бот ответит `Пон 12`
+В таком случае после `прив` бот ответит `Напиши что-то`, и если после этого вы сразу напишете `что-то`, то бот ответит `Пон 12`.
+
+Также вместо произвольных данных в цепочке можно возвращать команды. В данном случае `Reject` - это полностью сбросить цепочку и `Reset` - текущий хандлер сработает ещё раз.
+
+К примеру
+
+```python
+from asyncVK.chain import Chain, Reset
+
+
+chain = Chain()
+
+
+@Handler.on.message_new(Condition(contains_command="прив"), is_lower=True)
+async def handler_1(dispatcher: Dispatcher):
+    await dispatcher.send_message("Напиши что-то")
+
+
+@Handler.on.message_new(is_lower=True)
+async def handler_2(dispatcher: Dispatcher):
+    if dispatcher.text != "что-то":
+        await dispatcher.send_message("Я жду от тебя что-то")
+	return Reset()
+    
+    await dispatcher.send_message("Пон")
+    
+    
+if __name__ == "__main__":
+    chain = Chain()
+    chain.add_handler(handler_1)
+    chain.add_handler(handler_2)
+    bot.add_chain(chain)
+
+    run_polling(bot)
+```
+Во втором хандлере бот будет ждать от тебя слова что-то, и пока ты его не напишешь - он будет срабатывать снова и снова в этой цепочке
 
 
 Весь код целиком для старта:
