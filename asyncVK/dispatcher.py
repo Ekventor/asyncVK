@@ -1,11 +1,10 @@
-from typing import Optional
+from typing import Any
 import aiohttp
-
-from .core import get_event_params
 
 
 class Dispatcher:
-    def __init__(self, event: dict, token: str, text: str = None, user_id: int = None, peer_id: int = None, post_id: int = None, owner_id: int = None):
+    def __init__(self, event: dict, token: str, text: str = None, user_id: int = None, peer_id: int = None,
+                 post_id: int = None, owner_id: int = None, chain_data: Any = None):
         self.token = token
         self.user_id = user_id
         self.peer_id = peer_id
@@ -13,6 +12,7 @@ class Dispatcher:
         self.owner_id = owner_id
         self.event = event
         self.text = text
+        self.chain_data = chain_data
 
     async def answer(self, text: str, attachment: str = None, keyboard: str = None) -> None:
         params = f"user_id={self.user_id}&message={text}&random_id=0"
@@ -58,11 +58,12 @@ class Dispatcher:
             await session.post("https://api.vk.com/method/messages.setActivity", params=params)
 
 
-def get_dispatcher_by_event(token: str, event: dict, event_params: dict) -> Optional[Dispatcher]:
+def get_dispatcher_by_event(token: str, event: dict, event_params: dict, chain_data: Any) -> Dispatcher:
     text = event_params["text"]
     user_id = event_params["user_id"]
     peer_id = event_params["peer_id"]
     post_id = event_params["post_id"]
     owner_id = event_params["owner_id"]
 
-    return Dispatcher(event=event, token=token, text=text, user_id=user_id, peer_id=peer_id, post_id=post_id, owner_id=owner_id)
+    return Dispatcher(event=event, token=token, text=text, user_id=user_id, peer_id=peer_id,
+                      post_id=post_id, owner_id=owner_id, chain_data=chain_data)

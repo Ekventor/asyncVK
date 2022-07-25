@@ -7,6 +7,7 @@ class BoundChain:
     def __init__(self, handlers: List[Handler], user_id: int):
         self.handlers = handlers
         self.user_id = user_id
+        self.data = None
 
     def is_trigger(self, event_type: str, user_id: int) -> bool:
         return event_type == self.handlers[0].event_type and user_id == self.user_id
@@ -16,7 +17,7 @@ class BoundChain:
 
         handler = self.handlers.pop(0)
         if handler.is_trigger(event_params):
-            await handler.new_event(token, event, event_params)
+            self.data = await handler.new_event(token, event, event_params, self.data)
             result = True
         else:
             result = False

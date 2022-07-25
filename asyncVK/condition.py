@@ -1,5 +1,7 @@
 from typing import Union
 
+from .core import get_event_params
+
 
 class Condition:
     def __init__(self, command: str = None, contains_command: str = None,
@@ -11,7 +13,13 @@ class Condition:
         self.post_id = post_id
         self.owner_id = owner_id
 
-    def new_event(self, text: str = None, user_id: int = None, peer_id: int = None, post_id: int = None, owner_id: int = None) -> bool:
+    def new_event(self, event_params: dict) -> bool:
+        text = event_params["text"]
+        user_id = event_params["user_id"]
+        peer_id = event_params["peer_id"]
+        post_id = event_params["post_id"]
+        owner_id = event_params["owner_id"]
+
         if (self.contains_command is not None and self.contains_command in text) or \
                 (self.command is not None and self.command == text) or \
                 (self.user_id is not None and self.user_id == user_id) or \
@@ -27,8 +35,8 @@ class And:
     def __init__(self, *conditions: Union[Condition, "And", "Or"]):
         self.conditions = conditions
 
-    def new_event(self, text: str = None, user_id: int = None, peer_id: int = None, post_id: int = None, owner_id: int = None) -> bool:
-        if all(list(map(lambda condition: condition.new_event(text, user_id, peer_id), self.conditions))):
+    def new_event(self, event_params: dict) -> bool:
+        if all(list(map(lambda condition: condition.new_event(event_params), self.conditions))):
             return True
 
         return False
@@ -38,8 +46,8 @@ class Or:
     def __init__(self, *conditions: Union[Condition, And, "Or"]):
         self.conditions = conditions
 
-    def new_event(self, text: str = None, user_id: int = None, peer_id: int = None, post_id: int = None, owner_id: int = None) -> bool:
-        if any(list(map(lambda condition: condition.new_event(text, user_id, peer_id), self.conditions))):
+    def new_event(self, event_params: dict) -> bool:
+        if any(list(map(lambda condition: condition.new_event(event_params), self.conditions))):
             return True
 
         return False

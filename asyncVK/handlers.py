@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Any
 import traceback
 import sys
 
@@ -16,8 +16,8 @@ class Handler:
         self.func = func
 
     def __call__(self, func):
-        async def wrapper(token: str, event: dict, event_params: dict):
-            await func(get_dispatcher_by_event(token, event, event_params))
+        async def wrapper(token: str, event: dict, event_params: dict, chain_data: Any):
+            return await func(get_dispatcher_by_event(token, event, event_params, chain_data))
 
         return type(self)(self.condition, self.is_lower, wrapper)
 
@@ -31,9 +31,9 @@ class Handler:
 
         return self.condition is None or self.condition.new_event(event_params)
 
-    async def new_event(self, token: str, event: dict, event_params: dict) -> None:
+    async def new_event(self, token: str, event: dict, event_params: dict, chain_data: Any = None) -> Any:
         try:
-            await self.func(token, event, event_params)
+            return await self.func(token, event, event_params, chain_data)
         except:
             sys.stderr.write(f"\n\n{traceback.format_exc()}\n\n")
 
