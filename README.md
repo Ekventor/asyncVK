@@ -282,6 +282,60 @@ async def handler(dispatcher: Dispatcher):
 ```
 
 
+В боте также присутствует встроенный функционал создания цепочек. Что такое цепочки? Это когда команда состоит из нескольких частей. То есть, к примеру, регистрация. Вы пишите `/регистрация` и бот далее просит вас ввести имя. И вы вводите своё имя и регистрация пройдена в 2 сообщения, то есть 2 части.
+
+```python
+from asyncVK.chain import Chain
+```
+
+Таким образом мы импортируем класс цепочек. Как создать цепочку? Всё просто. Вместо `bot.handle` используем `chain.add_handler`, а потом `bot.add_chain(chain)`
+
+К примеру:
+```python
+chain = Chain()
+
+
+@chain.add_handle
+@Handler.on.message_new(Condition(contains_command="прив"), is_lower=True)
+async def handler_1(dispatcher: Dispatcher):
+    await dispatcher.send_message("Напиши что-то")
+
+
+@chain.add_handle
+@Handler.on.message_new(Condition(contains_command="что-то"), is_lower=True)
+async def handler_2(dispatcher: Dispatcher):
+    await dispatcher.send_message("Пон")
+    
+    
+bot.add_chain(chain)
+```
+
+Или:
+```python
+chain = Chain()
+
+
+@Handler.on.message_new(Condition(contains_command="прив"), is_lower=True)
+async def handler_1(dispatcher: Dispatcher):
+    await dispatcher.send_message("Напиши что-то")
+
+
+@Handler.on.message_new(Condition(contains_command="что-то"), is_lower=True)
+async def handler_2(dispatcher: Dispatcher):
+    await dispatcher.send_message("Пон")
+    
+    
+if __name__ == "__main__":
+    chain = Chain()
+    chain.add_handler(handler_1)
+    chain.add_handler(handler_2)
+    bot.add_chain(chain)
+
+    run_polling(bot)
+
+```
+
+
 Весь код целиком для старта:
 ```python
 from asyncVK import Handler, Bot, run_polling
