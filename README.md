@@ -297,13 +297,13 @@ from asyncVK.chain import Chain
 chain = Chain()
 
 
-@chain.add_handle
+@chain.add_handler
 @Handler.on.message_new(Condition(contains_command="прив"), is_lower=True)
 async def handler_1(dispatcher: Dispatcher):
     await dispatcher.send_message("Напиши что-то")
 
 
-@chain.add_handle
+@chain.add_handler
 @Handler.on.message_new(Condition(contains_command="что-то"), is_lower=True)
 async def handler_2(dispatcher: Dispatcher):
     await dispatcher.send_message("Пон")
