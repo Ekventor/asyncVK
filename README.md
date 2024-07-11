@@ -136,43 +136,6 @@ async def handler(dispatcher: Dispatcher):
     await dispatcher.message.pin()
 ```
 
-Как создать кнопки? Тоже несложно! Вот пример:
-```python
-@bot.handle
-@Handler.on.message_new(Condition(contains_command="прив"), is_lower=True)
-async def handler(dispatcher: Dispatcher):
-    buttons = keyboard.get_keyboard([
-        [
-            ("yes", "positive"),
-            ("no", "negative")
-        ],
-        [
-            ("hm...", "default"),
-            ("by default", "primary"),
-            ("never", "negative")
-        ]
-    ])
-
-    await dispatcher.send_message("Содержит сообщение прив", keyboard=buttons)
-```
-[Результат создания кнопок](https://sun9-26.userapi.com/impf/Y1M5ziV_GLiQxaALrdTlDkOB-Vdp0nSOKH2-gA/YT8LKOXmFkM.jpg?size=624x351&quality=96&proxy=1&sign=01e1486d2e40ac2ab494541773f16109&type=album)
-
-По умолчанию кнопки создаются обычными и одноразовыми. Чтобы сделать их многоразовыми пропишите `one_time=False`, а если хотите сделать их инлайновыми, то пропишите `inline=True`. К примеру:
-```python
-buttons = keyboard.get_keyboard([
-    [
-        ("yes", "positive"),
-        ("no", "negative")
-    ],
-    [
-        ("hm...", "default"),
-        ("by default", "primary"),
-        ("never", "negative")
-    ]
-], inline=True)
-```
-Тогда эти кнопки будут в сообщении (инлайновыми).
-
 Можно строить любые запросы, даже если этого не предполагает отсутствие метода в диспетчере:
 ```python
 @bot.handle
@@ -198,6 +161,11 @@ async def handler(dispatcher: Dispatcher):
     dispatcher.reply_user_id - id пользователя написавшего отмеченное сообщение (если таковое имеется)
     dispatcher.reply_peer_id - id чата отмеченного сообщения (если таковое имеется)
     dispatcher.reply_object_id - id объекта ответа
+    dispatcher.action_type - тип действия
+    dispatcher.action_text - текст действия
+    dispatcher.action_object_id - id объекта действия
+    dispatcher.action_member_id - id пользователя, инициировавшего действие
+    dispatcher.payload - payload
     dispatcher.message - выдаёт структуру Message для сообщения из события
     dispatcher.reply_message - выдаёт структуру Message для отвеченного сообщения из события
 
@@ -448,42 +416,68 @@ if __name__ == "__main__":
 ```
 Во втором хандлере бот будет ждать от тебя слова что-то, и пока ты его не напишешь - он будет срабатывать снова и снова в этой цепочке.
 
+Пример использования структуры `Message` и `ActionCondition`, бот примет закреплённое сообщение и будет его удерживать в закрепе.
+`ActionCondition` это условие на действие.
 
-Весь код целиком для старта:
+Возможные значения `ActionCondition`:
+
+	chat_pin_message - закрепление сообщения
+ 	chat_unpin_message - открепление сообщения
+  	chat_title_update - обновление названия беседы
+   	chat_photo_update - обновление аватарки беседы
+    	chat_photo_remove - удаление аватарки беседы
+
+
 ```python
-from asyncVK import Handler, Bot, run_polling
-from asyncVK.dispatcher import Dispatcher
-from asyncVK.condition import Condition, And, Or
-import asyncVK.keyboard as keyboard
-
-
-TOKEN = "access_token"
-GROUP_ID = 182801600
-
-bot = Bot(TOKEN, GROUP_ID)
+pinned_message = {"object": None}
 
 
 @bot.handle
-@Handler.on.message_new(Condition(contains_command="прив"), is_lower=True)
+@Handler.on.message_new(Condition(contains_command="удержи"))
 async def handler(dispatcher: Dispatcher):
-    buttons = keyboard.get_keyboard([
-        [
-            ("yes", "positive"),
-            ("no", "negative")
-        ],
-        [
-            ("hm...", "default"),
-            ("by default", "primary"),
-            ("never", "negative")
-        ]
-    ], inline=True)
+    pinned_message["object"] = dispatcher.reply_message
+    await pinned_message["object"].pin()
+    await dispatcher.send_message("ok")
 
-    await dispatcher.send_message("Содержит сообщение прив", keyboard=buttons)
-    result = await bot.execute("messages.send", peer_id=dispatcher.peer_id, 
-                               message="okay", random_id=0)
-    print(result)
-    
-    
-if __name__ == "__main__":
-    run_polling(bot)
+
+@bot.handle
+@Handler.on.message_new(Or(ActionCondition(action="chat_pin_message"),
+                           ActionCondition(action="chat_unpin_message")))
+async def handler(dispatcher: Dispatcher):
+    await dispatcher.send_message("Не, не выйдет")
+    await pinned_message["object"].pin()
+```
+
+Методы диспетчера `send_message`, `answer`, `reply` возвращают структуру `Message`
+
+Пример создания кнопок, а также использования пайлоада
+```python
+def check_payload(event_params: dict) -> bool:
+    payload = event_params["payload"]
+    if payload.get("answer") == "yes":
+        return True
+    return False
+
+
+@bot.handle
+@Handler.on.message_new(Condition(contains_command="дай"))
+async def handler(dispatcher: Dispatcher):
+    keyboard = Keyboard(
+        Line(
+            Button("да", "positive", {"answer": "yes"})
+        ),
+        Line(
+            Button("нет", "negative", {"answer": "no"}),
+            Button("возможно", "default", {"answer": "maybe"})
+        ), one_time=True, inline=True
+    )
+
+    await dispatcher.send_message("Не дам", keyboard=keyboard)
+
+
+@bot.handle
+@Handler.on.message_new(Condition(functional_condition=check_payload))
+async def handler(dispatcher: Dispatcher):
+    await dispatcher.send_message("Ок")
+    await dispatcher.send_message(f"Ваш пайлоад: {dispatcher.payload}")
 ```
