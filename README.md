@@ -426,6 +426,8 @@ if __name__ == "__main__":
   	chat_title_update - обновление названия беседы
    	chat_photo_update - обновление аватарки беседы
     	chat_photo_remove - удаление аватарки беседы
+     	chat_kick_user - удаление пользователя из чата, пользователь вышел из чата
+      	chat_invite_user - добавление пользователя в чат
 
 
 ```python
