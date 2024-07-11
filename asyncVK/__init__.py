@@ -3,8 +3,6 @@ import aiohttp
 import traceback
 import sys
 
-from typing import Union
-
 from . import handlers
 from .chain import Chain
 from .core import VERSION, get_event_params
@@ -16,6 +14,7 @@ class Handler:
 
 class Bot:
     def __init__(self, token: str, group_id: int):
+        self.session = aiohttp.ClientSession()
         self.token = token
         self.group_id = group_id
         self.config = {}
@@ -24,7 +23,7 @@ class Bot:
         self.chains = []
         self.bound_chains = []
 
-    def handle(self, handler: Union[handlers.Handler]) -> handlers.Handler:
+    def handle(self, handler: handlers.Handler) -> handlers.Handler:
         self.handlers.append(handler)
         return handler
 
@@ -33,34 +32,33 @@ class Bot:
         return chain
 
     async def run_polling(self) -> None:
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://api.vk.com/method/groups.getLongPollServer",
-                                   params=f"group_id={self.group_id}&access_token={self.token}&v={VERSION}") as response:
-                config = await response.json()
-                print(config)
-                self.config = config["response"]
-                self.config["server"] = self.config["server"].replace("https://", "")
+        async with self.session.get("https://api.vk.com/method/groups.getLongPollServer",
+                                    params=f"group_id={self.group_id}&access_token={self.token}&v={VERSION}") as response:
+            config = await response.json()
+            print(config)
+            self.config = config["response"]
+            self.config["server"] = self.config["server"].replace("https://", "")
 
-                async with session.get("https://api.vk.com/method/groups.getLongPollSettings",
-                                       params=f"group_id={self.group_id}&access_token={self.token}&v={VERSION}") as response:
-                    print(await response.json())
+            async with self.session.get("https://api.vk.com/method/groups.getLongPollSettings",
+                                        params=f"group_id={self.group_id}&access_token={self.token}&v={VERSION}") as response:
+                print(await response.json())
 
-                while True:
-                    try:
-                        async with session.get(f"https://%s?act=a_check&key=%s&ts=%s&wait=60&mode=2&version={VERSION}" % (
-                        self.config["server"], self.config["key"], self.config["ts"])) as response:
-                            event = await response.json()
-                            updates = event["updates"]
-                            if len(updates) == 0:
-                                continue
-                            print(updates)
+            while True:
+                try:
+                    async with self.session.get(f"https://%s?act=a_check&key=%s&ts=%s&wait=60&mode=2&version={VERSION}" % (
+                               self.config["server"], self.config["key"], self.config["ts"])) as response:
+                        event = await response.json()
+                        updates = event["updates"]
+                        if len(updates) == 0:
+                            continue
+                        print(updates)
 
-                            self.config["ts"] = event["ts"]
+                        self.config["ts"] = event["ts"]
 
-                            asyncio.create_task(self.send_event(updates[0]))
+                        asyncio.create_task(self.send_event(updates[0]))
 
-                    except:
-                        sys.stderr.write(f"\n\n{traceback.format_exc()}\n\n")
+                except:
+                    sys.stderr.write(f"\n\n{traceback.format_exc()}\n\n")
 
     async def send_event(self, event: dict) -> None:
         event_type = event["type"]
@@ -74,7 +72,7 @@ class Bot:
                     break
 
         active_chains = [chain for chain in self.bound_chains if chain.is_trigger(event_type, event_params["user_id"])]
-        tasks = [asyncio.create_task(chain.new_event(self.token, event, event_params))
+        tasks = [asyncio.create_task(chain.new_event(self, event, event_params))
                  for chain in active_chains]
 
         for future in asyncio.as_completed(tasks):
@@ -84,19 +82,20 @@ class Bot:
                 self.users_in_chain.remove(event_params["user_id"])
 
         active_handlers = [handler for handler in self.handlers if handler.is_trigger(event_params)]
-        tasks = [asyncio.create_task(handler.new_event(self.token, event, event_params))
+        tasks = [asyncio.create_task(handler.new_event(self, event, event_params))
                  for handler in active_handlers]
         await asyncio.gather(*tasks)
 
     async def execute(self, method: str, **params) -> dict:
-        query = f"https://api.vk.com/method/{method}?"
+        url = f"https://api.vk.com/method/{method}"
+        query = ""
         for key, value in params.items():
-            query += f"{key}={value}&"
+            if value is not None:
+                query += f"{key}={value}&"
         query += f"access_token={self.token}&v={VERSION}"
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(query) as response:
-                return await response.json()
+        async with self.session.post(url, params=query) as response:
+            return await response.json()
 
 
 def run_polling(bot: Bot) -> None:

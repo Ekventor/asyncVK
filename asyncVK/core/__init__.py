@@ -1,3 +1,6 @@
+import json
+
+
 VERSION = "5.199"
 
 
@@ -7,31 +10,49 @@ def get_event_params(event: dict, event_type: str) -> dict:
     peer_id = None
     post_id = None
     owner_id = None
-    reply_message = {}
+    object_id = None
+    reply = {}
+    action = {}
+    payload = {}
 
     try:
         if event_type == "message_new":
             text = event["object"]["message"]["text"]
             peer_id = event["object"]["message"]["peer_id"]
             user_id = event["object"]["message"]["from_id"]
+            object_id = event["object"]["message"]["conversation_message_id"]
 
             if "reply_message" in event["object"]["message"]:
-                reply_message = {
+                reply = {
                     "text": event["object"]["message"]["reply_message"]["text"],
                     "peer_id": event["object"]["message"]["reply_message"]["peer_id"],
-                    "user_id": event["object"]["message"]["reply_message"]["from_id"]
+                    "user_id": event["object"]["message"]["reply_message"]["from_id"],
+                    "object_id": event["object"]["message"]["reply_message"]["conversation_message_id"]
                 }
+
+            if "action" in event["object"]["message"]:
+                action = {
+                    "type": event["object"]["message"]["action"]["type"],
+                    "object_id": event["object"]["message"]["action"]["conversation_message_id"],
+                    "member_id": event["object"]["message"]["action"]["member_id"],
+                    "text": event["object"]["message"]["action"]["message"]
+                }
+
+            if "payload" in event["object"]["message"]:
+                payload = json.loads(event["object"]["message"]["payload"])
 
         elif event_type == "message_edit":
             text = event["object"]["text"]
             peer_id = event["object"]["peer_id"]
             user_id = event["object"]["from_id"]
+            object_id = event["object"]["conversation_message_id"]
 
             if "reply_message" in event["object"]:
-                reply_message = {
+                reply = {
                     "text": event["object"]["reply_message"]["text"],
                     "peer_id": event["object"]["reply_message"]["peer_id"],
-                    "user_id": event["object"]["reply_message"]["from_id"]
+                    "user_id": event["object"]["reply_message"]["from_id"],
+                    "object_id": event["object"]["reply_message"]["conversation_message_id"]
                 }
 
         elif event_type in ("wall_reply_new", "wall_reply_edit"):
@@ -62,5 +83,8 @@ def get_event_params(event: dict, event_type: str) -> dict:
         "peer_id": peer_id,
         "post_id": post_id,
         "owner_id": owner_id,
-        "reply_message": reply_message
+        "object_id": object_id,
+        "reply": reply,
+        "action": action,
+        "payload": payload
     }

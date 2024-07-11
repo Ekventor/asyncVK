@@ -21,10 +21,10 @@ class BoundChain:
     def is_trigger(self, event_type: str, user_id: int) -> bool:
         return event_type == self.handlers[0].event_type and user_id == self.user_id
 
-    async def new_event(self, token: str, event: dict, event_params: dict) -> Tuple:
+    async def new_event(self, bot, event: dict, event_params: dict) -> Tuple:
         handler = self.handlers[0]
         if handler.is_trigger(event_params):
-            data = await handler.new_event(token, event, event_params, self.data)
+            data = await handler.new_event(bot, event, event_params, self.data)
             if isinstance(data, Reject):
                 return False, self
         else:
