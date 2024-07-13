@@ -452,7 +452,7 @@ async def handler(dispatcher: Dispatcher):
 
 Методы диспетчера `send_message`, `answer`, `reply` возвращают структуру `Message`
 
-Пример создания кнопок, а также использования пайлоада
+Пример создания кнопок, а также использования пайлоада через `functional_condition`
 ```python
 def check_payload(event_params: dict) -> bool:
     payload = event_params["payload"]
@@ -479,6 +479,31 @@ async def handler(dispatcher: Dispatcher):
 
 @bot.handle
 @Handler.on.message_new(Condition(functional_condition=check_payload))
+async def handler(dispatcher: Dispatcher):
+    await dispatcher.send_message("Ок")
+    await dispatcher.send_message(f"Ваш пайлоад: {dispatcher.payload}")
+```
+
+Также существует `PayloadCondition`, который в отличие от простого `Condition` принимает все аргументы за И, а не ИЛИ по-умолчанию.
+```python
+@bot.handle
+@Handler.on.message_new(Condition(contains_command="дай"))
+async def handler(dispatcher: Dispatcher):
+    keyboard = Keyboard(
+        Line(
+            Button("да", "positive", {"answer": "yes", "module": "vk"})
+        ),
+        Line(
+            Button("нет", "negative", {"answer": "no"}),
+            Button("возможно", "default", {"answer": "yes"})
+        ), one_time=True, inline=True
+    )
+
+    await dispatcher.send_message("Не дам", keyboard=keyboard)
+
+
+@bot.handle
+@Handler.on.message_new(PayloadCondition(answer="yes", module="vk"))
 async def handler(dispatcher: Dispatcher):
     await dispatcher.send_message("Ок")
     await dispatcher.send_message(f"Ваш пайлоад: {dispatcher.payload}")
