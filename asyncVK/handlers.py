@@ -3,13 +3,14 @@ import traceback
 import sys
 
 from .dispatcher import get_dispatcher_by_event
-from .condition import Condition, And, Or
+from .condition import Condition, ActionCondition, PayloadCondition, And, Or
 
 
 class Handler:
     event_type = None
 
-    def __init__(self, condition: Union[Condition, And, Or] = None, is_lower: bool = False, func=None):
+    def __init__(self, condition: Union[Condition, ActionCondition, PayloadCondition, And, Or] = None,
+                 is_lower: bool = False, func=None):
         self.condition = condition
         self.is_lower = is_lower
         self.func = func

@@ -54,6 +54,19 @@ class ActionCondition:
         return False
 
 
+class PayloadCondition:
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+
+    def new_event(self, event_params: dict) -> bool:
+        payload = event_params["payload"]
+        for arg, value in self.kwargs.items():
+            if payload.get(arg) != value:
+                return False
+
+        return True
+
+
 class And:
     def __init__(self, *conditions: Union[Condition, "And", "Or"]):
         self.conditions = conditions
