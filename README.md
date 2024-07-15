@@ -17,7 +17,6 @@ asyncVK – асинхронный фреймворк для создания б
 from asyncVK import Handler, Bot, run_polling
 from asyncVK.dispatcher import Dispatcher
 from asyncVK.condition import Condition, And, Or
-import asyncVK.keyboard as keyboard
 
 
 TOKEN = "access_token"
@@ -508,3 +507,16 @@ async def handler(dispatcher: Dispatcher):
     await dispatcher.send_message("Ок")
     await dispatcher.send_message(f"Ваш пайлоад: {dispatcher.payload}")
 ```
+
+В библиотеке есть возможность создавать шаблоны сообщений для дальнейшей их рассылки
+```python
+@bot.handle
+@Handler.on.message_new(Condition(contains_command="разошли им"), is_lower=True)
+async def handler(dispatcher: Dispatcher):
+    await dispatcher.reply("Окей")
+
+    message = dispatcher.create_message_template("Вам послание, месье", forward=dispatcher.forward)
+    await message.send_to("476393332,584575899")
+```
+В этом коде бот перешлёт сообщение двум пользователям с соответствующими id. 
+Можно отправлять сообщения по-одиночному, для этого замените на `await message.send_to(476393332)`
