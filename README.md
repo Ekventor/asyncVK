@@ -286,53 +286,37 @@ async def handler(dispatcher: Dispatcher):
 В фреймворке также присутствует встроенный функционал создания цепочек. Что такое цепочки? Это когда команда состоит из нескольких частей. То есть, к примеру, регистрация. Вы пишите `/регистрация` и бот далее просит вас ввести имя. И вы вводите своё имя и регистрация пройдена в 2 сообщения, то есть 2 части.
 
 ```python
-from asyncVK.chain import Chain
+from asyncVK.chain import Chain, ChainResult
 ```
 
-Таким образом мы импортируем класс цепочек. Как создать цепочку? Всё просто. Вместо `bot.handle` используем `chain.add_handler`, а потом `bot.add_chain(chain)`.
+Таким образом мы импортируем класс цепочек. Как создать цепочку? Всё просто. Вместо `bot.handle` используем `chain.add_handler`, а потом `bot.add_chain(chain)`. `chain.add_handler` принимает один аргумент - название хандлера в рамках цепочки. Цепочка - это конечный автомат.
 
 К примеру:
 ```python
 chain = Chain()
 
 
-@chain.add_handler
-@Handler.on.message_new(Condition(contains_command="прив"), is_lower=True)
-async def handler_1(dispatcher: Dispatcher):
-    await dispatcher.send_message("Напиши что-то")
+@chain.add_handler("1")
+@Handler.on.message_new(Or(Condition(contains_command="опрос")), is_lower=True)
+async def handler(dispatcher: Dispatcher):
+    await dispatcher.send_message("Ты нуб?")
+    return ChainResult("2")
 
 
-@chain.add_handler
-@Handler.on.message_new(Condition(contains_command="что-то"), is_lower=True)
-async def handler_2(dispatcher: Dispatcher):
-    await dispatcher.send_message("Пон")
+@chain.add_handler("2")
+@Handler.on.message_new()
+async def handler(dispatcher: Dispatcher):
+    to = "2"
+    if "да" in dispatcher.text.lower():
+        to = None
+        await dispatcher.send_message("Я так и знал")
+    else:
+        await dispatcher.send_message("Не ври, ты нуб?")
+
+    return ChainResult(to)
     
     
 bot.add_chain(chain)
-```
-
-Или:
-```python
-chain = Chain()
-
-
-@Handler.on.message_new(Condition(contains_command="прив"), is_lower=True)
-async def handler_1(dispatcher: Dispatcher):
-    await dispatcher.send_message("Напиши что-то")
-
-
-@Handler.on.message_new(Condition(contains_command="что-то"), is_lower=True)
-async def handler_2(dispatcher: Dispatcher):
-    await dispatcher.send_message("Пон")
-    
-    
-if __name__ == "__main__":
-    chain = Chain()
-    chain.add_handler(handler_1)
-    chain.add_handler(handler_2)
-    bot.add_chain(chain)
-
-    run_polling(bot)
 ```
 
 Также можно пробрасывать какие-то данные по цепочке:
@@ -340,62 +324,27 @@ if __name__ == "__main__":
 chain = Chain()
 
 
-@Handler.on.message_new(Condition(contains_command="прив"), is_lower=True)
-async def handler_1(dispatcher: Dispatcher):
-    await dispatcher.send_message("Напиши что-то")
-    return 12
+@chain.add_handler("1")
+@Handler.on.message_new(Or(Condition(contains_command="опрос")), is_lower=True)
+async def handler(dispatcher: Dispatcher):
+    await dispatcher.send_message("Твой ник?")
+    return ChainResult("2")
 
 
-@Handler.on.message_new(Condition(contains_command="что-то"), is_lower=True)
-async def handler_2(dispatcher: Dispatcher):
-    await dispatcher.send_message(f"Пон {dispatcher.chain_data}")
-    
-    
-if __name__ == "__main__":
-    chain = Chain()
-    chain.add_handler(handler_1)
-    chain.add_handler(handler_2)
-    bot.add_chain(chain)
+@chain.add_handler("2")
+@Handler.on.message_new()
+async def handler(dispatcher: Dispatcher):
+    await dispatcher.send_message("Твой возраст?")
+    return ChainResult("3", {"name": dispatcher.text})
 
-    run_polling(bot)
+
+@chain.add_handler("3")
+@Handler.on("message_new")
+async def handler(dispatcher: Dispatcher):
+    await dispatcher.send_message(f"Вы, месье {dispatcher.chain_data["name"]} возрастом {dispatcher.text} лет")
 ```
 
-В таком случае после `прив` бот ответит `Напиши что-то`, и если после этого вы сразу напишете `что-то`, то бот ответит `Пон 12`. Также напоминаю, что одновременно у одного пользователя может быть только одна активная цепочка. Если же две будут активироваться по одинаковому условию, то всё равно активна будет одна из них.
-
-Также вместо произвольных данных в цепочке можно возвращать команды. В данном случае `Reject` - это полностью сбросить цепочку и `Reset` - текущий хандлер сработает ещё раз. При `Reset` ваш `chain_data` не сбрасывается.
-
-К примеру
-
-```python
-from asyncVK.chain import Chain, Reset
-
-
-chain = Chain()
-
-
-@Handler.on.message_new(Condition(contains_command="прив"), is_lower=True)
-async def handler_1(dispatcher: Dispatcher):
-    await dispatcher.send_message("Напиши что-то")
-
-
-@Handler.on.message_new(is_lower=True)
-async def handler_2(dispatcher: Dispatcher):
-    if dispatcher.text != "что-то":
-        await dispatcher.send_message("Я жду от тебя что-то")
-	return Reset()
-    
-    await dispatcher.send_message("Пон")
-    
-    
-if __name__ == "__main__":
-    chain = Chain()
-    chain.add_handler(handler_1)
-    chain.add_handler(handler_2)
-    bot.add_chain(chain)
-
-    run_polling(bot)
-```
-Во втором хандлере бот будет ждать от тебя слова что-то, и пока ты его не напишешь - он будет срабатывать снова и снова в этой цепочке.
+`ChainResult` имеет два аргумента. Первый это `to` - следующий хандлер в цепочке. `to` можно направить на самого себя, тем самым зациклив цепочку до выполнения определённых условий. Если `to` равен `None`, то цепочка завершается. Второй это `data` - его вы сможете получить в вашем следующем хандлере в `dispatcher.chain_data`. Также, если ничего не возвращать, то цепочка тоже завершается.
 
 Пример использования структуры `Message` и `ActionCondition`, бот примет закреплённое сообщение и будет его удерживать в закрепе.
 `ActionCondition` это условие на действие.
